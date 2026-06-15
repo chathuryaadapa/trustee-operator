@@ -295,6 +295,10 @@ type TrusteeConfigSpec struct {
 	// +optional
 	KbsServiceType corev1.ServiceType `json:"kbsServiceType,omitempty"`
 
+	// IbmSEConfigSpec is the struct that hosts the IBM SE specific configuration
+	// +optional
+	IbmSEConfigSpec IbmSEConfigSpec `json:"ibmSEConfigSpec,omitempty"`
+
 	// TlsConfig defines TLS protocol and cipher configuration for KBS HTTPS server
 	// If not specified, defaults to "intermediate" profile (TLS 1.2+)
 	// +optional

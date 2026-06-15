@@ -58,6 +58,15 @@ spec:
                       that contains the TLS certificate and private key
                     type: string
                 type: object
+              ibmSEConfigSpec:
+                description: IbmSEConfigSpec is the struct that hosts the IBM SE specific
+                  configuration
+                properties:
+                  certStorePvc:
+                    description: certStorePvc is the name of the PeristentVolumeClaim
+                      where certificates/keys are mounted
+                    type: string
+                type: object
               kbsServiceType:
                 description: |-
                   KbsServiceType is the type of service to create for KBS
