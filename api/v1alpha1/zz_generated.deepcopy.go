@@ -21,7 +21,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -318,7 +318,6 @@ func (in *TrusteeConfigSpec) DeepCopyInto(out *TrusteeConfigSpec) {
 	*out = *in
 	out.HttpsSpec = in.HttpsSpec
 	out.AttestationTokenVerificationSpec = in.AttestationTokenVerificationSpec
-	out.IbmSEConfigSpec = in.IbmSEConfigSpec
 	if in.TlsConfig != nil {
 		in, out := &in.TlsConfig, &out.TlsConfig
 		*out = new(TlsConfig)

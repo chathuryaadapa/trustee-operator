@@ -474,7 +474,7 @@ func (r *TrusteeConfigReconciler) configurePermissiveProfile(ctx context.Context
 			return spec, fmt.Errorf("IBM SE PVC: %w", err)
 		}
 
-		spec.IbmSEConfigSpec.CertStorePvc = r.trusteeConfig.Spec.IbmSEConfigSpec.CertStorePvc
+		spec.IbmSEConfigSpec.CertStorePvc = r.getIBMSEPVCName()
 	}
 
 	return spec, nil
@@ -534,7 +534,7 @@ func (r *TrusteeConfigReconciler) configureRestrictedProfile(ctx context.Context
 			return spec, fmt.Errorf("IBM SE PVC: %w", err)
 		}
 
-		spec.IbmSEConfigSpec.CertStorePvc = r.trusteeConfig.Spec.IbmSEConfigSpec.CertStorePvc
+		spec.IbmSEConfigSpec.CertStorePvc = r.getIBMSEPVCName()
 	}
 
 	return spec, nil
@@ -560,7 +560,12 @@ func (r *TrusteeConfigReconciler) configureAttestationTokenVerification(spec con
 
 // isIBMSE returns true if IBM SE configuration is specified
 func (r *TrusteeConfigReconciler) isIBMSE() bool {
-	return r.trusteeConfig.Spec.IbmSEConfigSpec.CertStorePvc != ""
+	return r.trusteeConfig.Spec.TeeType == confidentialcontainersorgv1alpha1.TeeTypeIbmSel
+}
+
+// getIBMSEPVCName returns the auto-generated PVC name for IBM SE
+func (r *TrusteeConfigReconciler) getIBMSEPVCName() string {
+	return r.trusteeConfig.Name + "-ibmse-certstore-pvc"
 }
 
 // getKbsConfigName returns the name for the KbsConfig created by this TrusteeConfig
@@ -1375,8 +1380,8 @@ func (r *TrusteeConfigReconciler) createOrUpdateGpuAttestationPolicyConfigMap(ct
 
 // createOrUpdateIBMSEPV creates or updates the PersistentVolume for IBM SE
 func (r *TrusteeConfigReconciler) createOrUpdateIBMSEPV(ctx context.Context) error {
-	// Skip if IBM SE config is not specified
-	if r.trusteeConfig.Spec.IbmSEConfigSpec.CertStorePvc == "" {
+	// Skip if IBM SE is not enabled
+	if !r.isIBMSE() {
 		return nil
 	}
 
@@ -1452,12 +1457,12 @@ func (r *TrusteeConfigReconciler) getIBMSEPVName() string {
 
 // createOrUpdateIBMSEPVC creates or updates the PersistentVolumeClaim for IBM SE
 func (r *TrusteeConfigReconciler) createOrUpdateIBMSEPVC(ctx context.Context) error {
-	// Skip if IBM SE config is not specified
-	if r.trusteeConfig.Spec.IbmSEConfigSpec.CertStorePvc == "" {
+	// Skip if IBM SE is not enabled
+	if !r.isIBMSE() {
 		return nil
 	}
 
-	pvcName := r.trusteeConfig.Spec.IbmSEConfigSpec.CertStorePvc
+	pvcName := r.getIBMSEPVCName()
 	desired := r.generateIBMSEPVC()
 	if err := ctrl.SetControllerReference(r.trusteeConfig, desired, r.Scheme); err != nil {
 		return fmt.Errorf("failed to set controller reference for IBM SE PVC: %w", err)
@@ -1497,7 +1502,7 @@ func (r *TrusteeConfigReconciler) createOrUpdateIBMSEPVC(ctx context.Context) er
 
 // generateIBMSEPVC generates the PersistentVolumeClaim for IBM SE
 func (r *TrusteeConfigReconciler) generateIBMSEPVC() *corev1.PersistentVolumeClaim {
-	pvcName := r.trusteeConfig.Spec.IbmSEConfigSpec.CertStorePvc
+	pvcName := r.getIBMSEPVCName()
 	return &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pvcName,

@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.21.0
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: trusteeconfigs.confidentialcontainers.org
 spec:
   group: confidentialcontainers.org
@@ -58,15 +58,6 @@ spec:
                       that contains the TLS certificate and private key
                     type: string
                 type: object
-              ibmSEConfigSpec:
-                description: IbmSEConfigSpec is the struct that hosts the IBM SE specific
-                  configuration
-                properties:
-                  certStorePvc:
-                    description: certStorePvc is the name of the PeristentVolumeClaim
-                      where certificates/keys are mounted
-                    type: string
-                type: object
               kbsServiceType:
                 description: |-
                   KbsServiceType is the type of service to create for KBS
@@ -75,6 +66,13 @@ spec:
               profileType:
                 description: ProfileType determines how to configure trustee, e.g.
                   in permissive/restricted mode etc.
+                type: string
+              teeType:
+                description: |-
+                  TeeType specifies the TEE platform type (e.g., IbmSel for IBM Secure Execution)
+                  When set to IbmSel, automatically creates PV/PVC and skips CPU/GPU attestation policies
+                enum:
+                - IbmSel
                 type: string
               tlsConfig:
                 description: |-
