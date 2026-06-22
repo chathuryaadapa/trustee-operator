@@ -451,7 +451,7 @@ func (r *TrusteeConfigReconciler) configurePermissiveProfile(ctx context.Context
 	spec.KbsRvpsRefValuesConfigMapName = r.getRvpsReferenceValuesConfigMapName()
 
 	// Only create CPU/GPU attestation policies for non-IBM SE deployments.
-	// For IBM SE, certStorePvc acts as the IBM SE mode switch.
+	// For IBM SE (teeType: IbmSel), these policies are not applicable.
 	if !r.isIBMSE() {
 		if err := r.createOrUpdateAttestationPolicyConfigMap(ctx); err != nil {
 			return spec, fmt.Errorf("CPU attestation policy ConfigMap: %w", err)
@@ -464,7 +464,7 @@ func (r *TrusteeConfigReconciler) configurePermissiveProfile(ctx context.Context
 		spec.KbsGpuAttestationPolicyConfigMapName = r.getGpuAttestationPolicyConfigMapName()
 	}
 
-	// Create IBM SE PV and PVC if configured
+	// Create IBM SE PV and PVC when teeType is IbmSel
 	if r.isIBMSE() {
 		if err := r.createOrUpdateIBMSEPV(ctx); err != nil {
 			return spec, fmt.Errorf("IBM SE PV: %w", err)
@@ -511,7 +511,7 @@ func (r *TrusteeConfigReconciler) configureRestrictedProfile(ctx context.Context
 	spec.KbsRvpsRefValuesConfigMapName = r.getRvpsReferenceValuesConfigMapName()
 
 	// Only create CPU/GPU attestation policies for non-IBM SE deployments.
-	// For IBM SE, certStorePvc acts as the IBM SE mode switch.
+	// For IBM SE (teeType: IbmSel), these policies are not applicable.
 	if !r.isIBMSE() {
 		if err := r.createOrUpdateAttestationPolicyConfigMap(ctx); err != nil {
 			return spec, fmt.Errorf("CPU attestation policy ConfigMap: %w", err)
@@ -524,7 +524,7 @@ func (r *TrusteeConfigReconciler) configureRestrictedProfile(ctx context.Context
 		spec.KbsGpuAttestationPolicyConfigMapName = r.getGpuAttestationPolicyConfigMapName()
 	}
 
-	// Create IBM SE PV and PVC if configured
+	// Create IBM SE PV and PVC when teeType is IbmSel
 	if r.isIBMSE() {
 		if err := r.createOrUpdateIBMSEPV(ctx); err != nil {
 			return spec, fmt.Errorf("IBM SE PV: %w", err)
