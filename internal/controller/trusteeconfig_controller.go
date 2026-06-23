@@ -400,6 +400,17 @@ func (r *TrusteeConfigReconciler) buildKbsConfigSpec(ctx context.Context) (confi
 		return spec, err
 	}
 
+	// Configure IBM SE PV/PVC after profile configuration (applies to all profiles).
+	if r.isIBMSE() {
+		if err = r.createOrUpdateIBMSEPV(ctx); err != nil {
+			return spec, fmt.Errorf("IBM SE PV: %w", err)
+		}
+		if err = r.createOrUpdateIBMSEPVC(ctx); err != nil {
+			return spec, fmt.Errorf("IBM SE PVC: %w", err)
+		}
+		spec.IbmSEConfigSpec.CertStorePvc = r.getIBMSEPVCName()
+	}
+
 	// Configure HTTPS if specified
 	if r.trusteeConfig.Spec.HttpsSpec.TlsSecretName != "" {
 		if err = r.createOrUpdateHttpsSecrets(ctx); err != nil {
@@ -464,19 +475,6 @@ func (r *TrusteeConfigReconciler) configurePermissiveProfile(ctx context.Context
 		spec.KbsGpuAttestationPolicyConfigMapName = r.getGpuAttestationPolicyConfigMapName()
 	}
 
-	// Create IBM SE PV and PVC when teeType is IbmSel
-	if r.isIBMSE() {
-		if err := r.createOrUpdateIBMSEPV(ctx); err != nil {
-			return spec, fmt.Errorf("IBM SE PV: %w", err)
-		}
-
-		if err := r.createOrUpdateIBMSEPVC(ctx); err != nil {
-			return spec, fmt.Errorf("IBM SE PVC: %w", err)
-		}
-
-		spec.IbmSEConfigSpec.CertStorePvc = r.getIBMSEPVCName()
-	}
-
 	return spec, nil
 }
 
@@ -522,19 +520,6 @@ func (r *TrusteeConfigReconciler) configureRestrictedProfile(ctx context.Context
 			return spec, fmt.Errorf("GPU attestation policy ConfigMap: %w", err)
 		}
 		spec.KbsGpuAttestationPolicyConfigMapName = r.getGpuAttestationPolicyConfigMapName()
-	}
-
-	// Create IBM SE PV and PVC when teeType is IbmSel
-	if r.isIBMSE() {
-		if err := r.createOrUpdateIBMSEPV(ctx); err != nil {
-			return spec, fmt.Errorf("IBM SE PV: %w", err)
-		}
-
-		if err := r.createOrUpdateIBMSEPVC(ctx); err != nil {
-			return spec, fmt.Errorf("IBM SE PVC: %w", err)
-		}
-
-		spec.IbmSEConfigSpec.CertStorePvc = r.getIBMSEPVCName()
 	}
 
 	return spec, nil
@@ -1378,21 +1363,15 @@ func (r *TrusteeConfigReconciler) createOrUpdateGpuAttestationPolicyConfigMap(ct
 	return nil
 }
 
-// createOrUpdateIBMSEPV creates or updates the PersistentVolume for IBM SE
+// createOrUpdateIBMSEPV creates the PersistentVolume for IBM SE if it does not exist.
 func (r *TrusteeConfigReconciler) createOrUpdateIBMSEPV(ctx context.Context) error {
-	// Skip if IBM SE is not enabled
-	if !r.isIBMSE() {
-		return nil
-	}
-
 	pvName := r.getIBMSEPVName()
-	desired := r.generateIBMSEPV()
 	found := &corev1.PersistentVolume{}
 	err := r.Get(ctx, client.ObjectKey{Name: pvName}, found)
 
 	if err != nil && k8serrors.IsNotFound(err) {
 		r.log.Info("Creating IBM SE PersistentVolume", "PV.Name", pvName)
-		if err := r.Create(ctx, desired); err != nil {
+		if err := r.Create(ctx, r.generateIBMSEPV()); err != nil {
 			return fmt.Errorf("failed to create IBM SE PV: %w", err)
 		}
 		return nil
@@ -1400,16 +1379,7 @@ func (r *TrusteeConfigReconciler) createOrUpdateIBMSEPV(ctx context.Context) err
 		return fmt.Errorf("failed to get IBM SE PV: %w", err)
 	}
 
-	if !apiequality.Semantic.DeepEqual(found.Spec, desired.Spec) {
-		r.log.Info("Updating IBM SE PersistentVolume", "PV.Name", pvName)
-		found.Spec = desired.Spec
-		if err := r.Update(ctx, found); err != nil {
-			return fmt.Errorf("failed to update IBM SE PV: %w", err)
-		}
-		return nil
-	}
-
-	r.log.V(1).Info("IBM SE PersistentVolume unchanged", "PV.Name", pvName)
+	r.log.V(1).Info("IBM SE PersistentVolume already exists", "PV.Name", pvName)
 	return nil
 }
 
