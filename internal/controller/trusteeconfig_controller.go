@@ -1427,11 +1427,6 @@ func (r *TrusteeConfigReconciler) getIBMSEPVName() string {
 
 // createOrUpdateIBMSEPVC creates or updates the PersistentVolumeClaim for IBM SE
 func (r *TrusteeConfigReconciler) createOrUpdateIBMSEPVC(ctx context.Context) error {
-	// Skip if IBM SE is not enabled
-	if !r.isIBMSE() {
-		return nil
-	}
-
 	pvcName := r.getIBMSEPVCName()
 	desired := r.generateIBMSEPVC()
 	if err := ctrl.SetControllerReference(r.trusteeConfig, desired, r.Scheme); err != nil {
